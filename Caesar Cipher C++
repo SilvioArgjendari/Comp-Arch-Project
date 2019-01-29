@@ -1,0 +1,74 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+int main(){
+	string string;
+	int operation;
+	int shift;
+	int i = 0;
+	
+	cout << "Enter the text you're going to encrypt/decrypt: ";
+	getline(cin, string);
+	
+	cout << "Press 1 for Encryption or 2 for Decryption: ";
+	cin >> operation;
+	
+	cout << "Number of places to shift: ";
+	cin >> shift;
+	
+	// If the user chooses to encrypt
+	if(operation == 1){
+		
+		// It scans for letters then performs the operation, avoiding characters like spaces or numbers.
+		while(i < string.length()){
+			
+			int j = 97;
+			int k = 65;
+			
+			while(j < 123 && k < 91){
+				
+				// Encrypts lower case characters
+				if(string.at(i) == (char)(j)){
+					string.at(i) = (char)('a' + ((j - 'a' + shift) % 26));
+					break;
+				}
+				// Encrypts upper case characters
+				if(string.at(i) == (char)(k)){
+					string.at(i) = (char)('A' + ((k - 'A' + shift) % 26));
+					break;
+				}
+				j++;
+				k++;
+			}
+			i++;
+		}	
+	}
+	
+	// If the user chooses to decrypt
+	if(operation == 2){
+		
+		while(i < string.length()){
+		
+			int j = 97;
+			int k = 65;
+			
+			while(j < 123 && k < 91){
+				// Decrypts lower case characters
+				if(string.at(i) == (char)(j)){
+					string.at(i) = (char)('a' + ((j - 'a' - shift + 26) % 26));
+					break;
+				}
+				// Decrypts upper case characters
+				if(string.at(i) == (char)(k)){
+					string.at(i) = (char)('A' + ((k - 'A' - shift + 26) % 26));
+					break;
+				}
+				j++;
+				k++;
+			}
+			i++;
+		}	
+	}
+	cout << string << endl;
+}
