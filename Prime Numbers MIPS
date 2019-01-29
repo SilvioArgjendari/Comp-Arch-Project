@@ -1,0 +1,67 @@
+.data
+	inputNumber: .asciiz "Enter a positive integer: "
+	inputError: .asciiz "Error. Integer not positive."
+	newLine: .asciiz "\n"
+.text
+	main:
+		# Print message inputNumber
+		li $v0, 4
+		la $a0, inputNumber
+		syscall	
+		
+		# Input number
+		li $v0, 5
+		syscall
+		# Storing input number in $s0
+		add $s0, $zero, $v0
+		
+		# Load i in $s1
+		addi $s1, $zero, 1
+		# Load j in $s2
+		addi $s2, $zero, 1
+		# Load count in $s3
+		addi $s3, $zero, 0
+		
+		ble $s0, $zero, ELSE
+		While1:
+			bge $s1, $s0, Exit1
+			# Set j = 1
+			addi $s2, $zero, 1
+			
+			While2:
+				bgt $s2, $s1, Exit2
+				div $s1, $s2
+				mfhi $t0
+				
+				bne $t0, $zero, Continue
+				addi $s3, $s3, 1
+				
+				Continue:
+					addi $s2, $s2, 1
+					j While2
+					
+			Exit2:
+				bne $s3, 2, Continue1
+						
+				# Print number if prime (count == 2)
+				li $v0, 1
+				add $a0, $zero, $s1
+				syscall
+				# Print new line
+				li $v0, 4
+				la $a0, newLine
+				syscall
+				
+			Continue1:
+				addi $s3, $zero, 0
+				addi $s1, $s1, 1
+				j While1
+		Exit1:	
+		# End of main
+		li $v0, 10
+		syscall
+		
+	ELSE:
+		li $v0, 4
+		la $a0, inputError
+		syscall
