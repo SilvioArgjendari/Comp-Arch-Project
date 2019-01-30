@@ -1,0 +1,207 @@
+.data
+	OperationOutput: .asciiz "Press 1 for Encryption or 2 for Decryption: "
+	operation: .word
+	toEncrypt: .asciiz "Enter the text you're going to encrypt: "
+	toDecrypt: .asciiz "Enter the text you're going to decrypt: "
+	string: .space 50
+	shift: .asciiz "Number of places to shift: "
+.text
+	main:
+		# Print message to Encrypt or Decrypt
+		li $v0, 4
+		la $a0, OperationOutput
+		syscall
+		
+		li $v0, 5								# Input 1 or 2. Encrypt or decrypt
+		la $a0, operation
+		syscall 
+		
+		add $t2, $v0, $zero						# Save the value to a temporary
+
+		beq $t2, 1, ForEncryption					# Jump to Encryption process
+		beq $t2, 2, ForDecryption					# Jump to Decryption process
+
+	ForEncryption:
+		# Print toEncrypt message
+		li $v0, 4
+		la $a0, toEncrypt
+		syscall
+		
+		li $v0, 8								# Input text you're going to encrypt
+		la $a0, string
+		la $a1, 50								
+		syscall
+		
+		la $t0, ($a0)							# Save string to $t0
+		li $t1, 0								# Counting length of the string 
+		
+		li $v0, 4								# Print shift message
+		la $a0, shift							
+		syscall
+		
+		li $v0, 5								# Input number of places to shift with
+		syscall
+
+		add $t3, $v0, $zero 						# Save shift to $t3
+
+	Encrypt:
+		lb $t4, 0($t0)  	 						# Read the first character
+		beq $t4, 10, END 	 						
+		beq $t4, $zero, END  						# Terminate if the field is blank or the full length is reached
+		jal IsLowerCase							# Check if the character is lower case
+
+	Encrypt2:
+		beq $v0, 1, EncryptLower   					# Branch to encrypt lower case characters
+		beq $v0, 0, EncryptUpper   					# Branch to encrypt upper case characters
+		add $a0, $t4, $zero   						# If the character is not a letter
+
+	PrintEncryptChar:
+		li $v0, 11 								# Prints the encrypted character
+		syscall
+
+		addi $t0, $t0, 1 							# Points to the next character
+		addi $t1, $t1, 1 							# count++
+
+		j Encrypt
+
+	ForDecryption:
+		# Print toDecrypt message
+		li $v0, 4
+		la $a0, toDecrypt
+		syscall
+		
+		li $v0, 8								# Input text you're going to decrypt
+		la $a0, string
+		la $a1, 50
+		syscall
+		
+		la $t0, ($a0)							# Save string to $t0
+		li $t1, 0								# Counting length of the string 
+	
+		li $v0, 4								# Print shift message
+		la $a0, shift							
+		syscall
+		
+		li $v0, 5								# Input number of places to shift with
+		syscall
+		
+		add $t3, $v0, $zero						# Save shift to $t3
+
+	Decrypt:
+		lb $t4, 0($t0)  							# Read the first character
+		beq $t4, 10, END  						
+		beq $t4, $zero, END   						# Terminate if the field is blank or the full length is reached
+		jal Decryptislower  						# Check for lower case characters
+
+	Decrypt2:
+		beq $v0, 1, DecryptLower					# Branch to decrypt lower case characters
+		beq $v0, 0, DecryptUpper					# Branch to decrypt upper case characters
+		add $a0, $t4, $zero						# If the character is not a letter
+
+	PrintDecryptChar:
+		li $v0, 11 								# Prints the decrypted character
+		syscall
+		
+		add $t0, $t0, 1 							# Points to the next character
+		add $t1, $t1, 1 							# count++
+		j Decrypt
+		
+	END:
+		li $v0, 10								# Exit system call
+		syscall
+	
+	# For Encryption
+	IsLowerCase:
+		bgt $t4, 122, NotLetter	 					# If the character is not a letter
+		blt $t4, 97, IsUpperOrOther 					# If the character is not lower case 
+		li $v0, 1   							# store value 1 in V$v0 if the character is lower case
+		jr $ra    								# Return address
+
+	NotLetter:
+		li $v0,2   								# Store value 2 in $vO if the character is not a letter
+		j Encrypt2
+
+	IsUpperOrOther:
+		blt $t4, 65, NotLetter						# Character not a letter so it remains unchanged
+		bgt $t4, 91, NotLetter 					
+		li $v0, 0								# Store value 0 in $v0 if the character is upper case
+		j Encrypt2
+
+	EncryptLower:
+		li $t5, 26   							# Encrypt lower case characters
+		sub $t4, $t4, 97
+		add $t4, $t4, $t3
+		div $t4, $t5
+		mfhi $a0
+		addi $a0, $a0, 97
+		j PrintEncryptChar
+
+	EncryptUpper:
+		li $t5, 26   							# Encrypt Upper case characters
+		sub $t4, $t4, 65
+		add $t4, $t4, $t3
+		div $t4, $t5
+		mfhi $a0
+		addi $a0, $a0, 65
+		j PrintEncryptChar
+
+	# For Decryption
+	Decryptislower:
+		bgt $t4, 122, Decrypt_NotLetter				# Character is not a letter
+		blt $t4, 97, Decrypt_IsUpperOrOther				# Character not lower case
+		li $v0,1								# Store value 1 in $v0 if the decrypt character is lower case
+		jr $ra
+
+	Decrypt_NotLetter:
+		li $v0,2								# Store value 2 in $v0 if the decrypt character isn't a letter
+		j Decrypt2
+
+	Decrypt_IsUpperOrOther:
+		blt $t4, 65, Decrypt_NotLetter					
+		bgt $t4, 91, Decrypt_NotLetter				# Branches if the character is not a letter
+		li $v0, 0								# Store value 0 in $v0 if the character is upper case
+		j Decrypt2
+	
+	# Decrypt lower case characters
+	DecryptLower:
+		li $t5, 26
+		sub $t4, $t4, 97
+		sub $t4, $t4, $t3
+		sub $t6, $zero, $t4
+		li $t7, 1
+ 
+	# If it's a negative value
+	ModFornegative:
+		mul $s0, $t5, $t7
+		bgt $s0, $t6, ModCal
+		addi $t7, $t7, 1
+		j ModFornegative
+
+	ModCal:
+		add $t4, $s0, $t4
+		div $t4, $t5
+		mfhi $a0
+		addi $a0, $a0, 97
+		j PrintDecryptChar
+ 
+	# Decrypt upper case characters
+	DecryptUpper:
+		li $t5, 26   				
+		sub $t4, $t4, 65
+		sub $t4, $t4, $t3
+		sub $t6, $zero, $t4
+		li $t7, 1
+ 
+	# If it's a negative value
+	ModFornegativeUpper:
+		mul $s0, $t5, $t7
+		bgt $s0, $t6, ModCalUpper
+		addi $t7, $t7, 1
+		j ModFornegativeUpper
+
+	ModCalUpper:
+		add $t4, $s0, $t4
+		div $t4, $t5
+		mfhi $a0
+		addi $a0, $a0, 65
+		j PrintDecryptChar
